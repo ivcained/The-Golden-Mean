@@ -1,3 +1,25 @@
+/**
+ * Sober Timer Component
+ * 
+ * The main component for the Dhab recovery application. Manages the complete
+ * user journey from pledge to setup to active sobriety tracking.
+ * 
+ * Features:
+ * - Multi-view state management (pledge, setup, timer, community)
+ * - Real-time sobriety timer with days/hours/minutes/seconds
+ * - Persistent data storage (localStorage + database)
+ * - Addiction selection with categories and search
+ * - Daily cost tracking and savings calculator
+ * - Anonymous community integration
+ * - Farcaster MiniApp context integration
+ * 
+ * Views:
+ * - Pledge: Initial commitment and motivation capture
+ * - Setup: Addiction selection and start date configuration
+ * - Timer: Main sobriety tracking interface with stats
+ * - Community: Anonymous support forum
+ */
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";

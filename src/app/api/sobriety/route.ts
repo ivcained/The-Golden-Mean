@@ -1,3 +1,15 @@
+/**
+ * Sobriety Data API Routes
+ * 
+ * This API provides endpoints for managing user sobriety tracking data.
+ * All operations are tied to a user's Farcaster ID (FID).
+ * 
+ * Endpoints:
+ * - GET: Retrieve user sobriety data
+ * - POST: Create or update sobriety data
+ * - DELETE: Reset/delete sobriety data
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import {
   getUserSobrietyData,
@@ -6,9 +18,18 @@ import {
   initializeDatabase,
 } from "~/lib/db";
 
-// Initialize database on first request
+/**
+ * Database initialization flag
+ * Ensures database is initialized only once per server instance
+ */
 let dbInitialized = false;
 
+/**
+ * Ensures database is initialized before operations
+ * 
+ * Initializes the database tables on first request.
+ * Subsequent calls do nothing (idempotent).
+ */
 async function ensureDbInitialized() {
   if (!dbInitialized) {
     await initializeDatabase();
@@ -16,7 +37,21 @@ async function ensureDbInitialized() {
   }
 }
 
-// GET - Fetch user sobriety data by FID
+/**
+ * GET /api/sobriety - Fetch user sobriety data
+ * 
+ * Retrieves sobriety tracking data for a specific user by their FID.
+ * 
+ * Query Parameters:
+ * - fid: Farcaster ID of the user (required)
+ * 
+ * @returns JSON response with user data or error
+ * 
+ * Response Codes:
+ * - 200: Success (data found or not found)
+ * - 400: Invalid or missing FID
+ * - 500: Server error
+ */
 export async function GET(request: NextRequest) {
   try {
     await ensureDbInitialized();
@@ -55,7 +90,31 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Save or update user sobriety data
+/**
+ * POST /api/sobriety - Save or update user sobriety data
+ * 
+ * Creates new sobriety tracking data or updates existing data for a user.
+ * Uses upsert logic (ON CONFLICT) to handle both cases.
+ * 
+ * Request Body:
+ * - fid: Farcaster ID (required)
+ * - startDate: Sobriety start date YYYY-MM-DD (required)
+ * - addiction: Type of addiction (required)
+ * - startTime: Start time HH:MM (optional)
+ * - customAddiction: Custom addiction name (optional)
+ * - dailyCost: Estimated daily cost (optional, default: 8)
+ * - motivation: User's motivation text (optional)
+ * - pledgeDate: Date of pledge (optional)
+ * - walletAddress: User's wallet address (optional)
+ * - authStrategy: Auth method used (optional)
+ * 
+ * @returns JSON response with success status or error
+ * 
+ * Response Codes:
+ * - 200: Success
+ * - 400: Missing required fields
+ * - 500: Server error
+ */
 export async function POST(request: NextRequest) {
   try {
     await ensureDbInitialized();
@@ -118,7 +177,22 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE - Reset user sobriety data
+/**
+ * DELETE /api/sobriety - Reset user sobriety data
+ * 
+ * Deletes all sobriety tracking data for a user.
+ * Used when user wants to reset their journey or delete their account.
+ * 
+ * Query Parameters:
+ * - fid: Farcaster ID of the user (required)
+ * 
+ * @returns JSON response with success status or error
+ * 
+ * Response Codes:
+ * - 200: Success
+ * - 400: Invalid or missing FID
+ * - 500: Server error
+ */
 export async function DELETE(request: NextRequest) {
   try {
     await ensureDbInitialized();

@@ -1,38 +1,84 @@
+/**
+ * Main Application Component
+ * 
+ * This is the root client component that initializes the MiniApp and
+ * handles authentication. It wraps the SoberTimer component and manages
+ * the Farcaster MiniKit integration.
+ * 
+ * Features:
+ * - Initializes Farcaster MiniKit frame
+ * - Handles Quick Auth for user verification
+ * - Provides user context (FID) to child components
+ * - Dynamically loads SoberTimer (client-side only)
+ */
+
 "use client";
 
 import dynamic from "next/dynamic";
 import { useMiniKit, useQuickAuth } from "@coinbase/onchainkit/minikit";
 import { useEffect } from "react";
 
+/**
+ * Dynamically import SoberTimer component
+ * Disabled SSR to ensure it only renders on client (required for localStorage access)
+ */
 const SoberTimer = dynamic(() => import("~/components/SoberTimer"), {
   ssr: false,
 });
 
+/**
+ * Response interface for authentication API
+ */
 interface AuthResponse {
+  /** Whether authentication was successful */
   success: boolean;
+  /** User information if authenticated */
   user?: {
-    fid: number; // FID is the unique identifier for the user
+    /** Farcaster ID - unique identifier for the user */
+    fid: number;
+    /** Unix timestamp when token was issued */
     issuedAt?: number;
+    /** Unix timestamp when token expires */
     expiresAt?: number;
   };
-  message?: string; // Error messages come as 'message' not 'error'
+  /** Error message if authentication failed */
+  message?: string;
 }
 
+/**
+ * Main App Component
+ * 
+ * Initializes the Farcaster MiniApp environment and renders the main
+ * SoberTimer component. Handles frame readiness and optional authentication.
+ * 
+ * @returns The main application UI
+ */
 export default function App() {
   const { isFrameReady, setFrameReady, context } = useMiniKit();
 
-  // Initialize the miniapp
+  /**
+   * Effect: Initialize the MiniApp frame
+   * 
+   * Signals to Farcaster that the app is ready to be displayed.
+   * This should be called once the app has finished loading.
+   */
   useEffect(() => {
     if (!isFrameReady) {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
 
-  // If you need to verify the user's identity, you can use the useQuickAuth hook.
-  // This hook will verify the user's signature and return the user's FID. You can update
-  // this to meet your needs. See the /app/api/auth/route.ts file for more details.
-  // Note: If you don't need to verify the user's identity, you can get their FID and other user data
-  // via `context.user.fid`.
+  /**
+   * Optional: Verify user identity with Quick Auth
+   * 
+   * Quick Auth provides server-side verification of the user's identity.
+   * This is useful if you need cryptographic proof of the user's FID.
+   * 
+   * Note: If you don't need verification, you can access user data directly
+   * via `context.user.fid` without making an API call.
+   * 
+   * See /app/api/auth/route.ts for the verification implementation.
+   */
   const {
     data: authData,
     isLoading: isAuthLoading,

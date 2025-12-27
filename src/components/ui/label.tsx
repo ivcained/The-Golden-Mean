@@ -1,3 +1,10 @@
+/**
+ * Label Component
+ * 
+ * Accessible form label component built with Radix UI.
+ * Provides proper ARIA attributes and styling for form inputs.
+ */
+
 "use client"
 
 import * as React from "react"

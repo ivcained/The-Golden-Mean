@@ -1,4 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Demo Component
+ * 
+ * Comprehensive demonstration component showcasing all Farcaster MiniKit
+ * capabilities and features. Used for testing and reference.
+ * 
+ * Demonstrates:
+ * - Frame context access
+ * - Authentication methods
+ * - Wallet operations
+ * - Token transfers
+ * - Cast composition
+ * - Profile viewing
+ * - URL handling
+ * - Camera/microphone access
+ * - Haptic feedback
+ * - And many more MiniKit features
+ * 
+ * Note: This is a demo file and not part of the main app functionality.
+ */
 "use client";
 
 import React, { useState, useEffect } from "react";

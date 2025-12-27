@@ -1,3 +1,15 @@
+/**
+ * Wagmi Provider Component
+ * 
+ * Configures and provides Wagmi (Web3 React Hooks) context for Ethereum interactions.
+ * Sets up supported chains (Base, Optimism) and connectors.
+ * 
+ * Features:
+ * - Base and Optimism chain support
+ * - Base Account connector integration
+ * - React Query integration for caching
+ */
+
 import { createConfig, http, WagmiProvider } from "wagmi";
 import { base, optimism } from "wagmi/chains";
 import { baseAccount } from "wagmi/connectors";

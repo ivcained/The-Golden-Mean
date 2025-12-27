@@ -1,3 +1,18 @@
+/**
+ * Timer View Component
+ * 
+ * Main sobriety tracking interface displaying real-time progress
+ * and accumulated benefits.
+ * 
+ * Features:
+ * - Real-time countdown display (days/hours/minutes/seconds)
+ * - Summary tab with progress stats
+ * - Savings tab with financial calculations
+ * - Daily cost editing
+ * - Reset functionality
+ * - Community access button
+ */
+
 "use client";
 
 import React from "react";

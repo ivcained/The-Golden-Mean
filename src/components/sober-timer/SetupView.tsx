@@ -1,3 +1,17 @@
+/**
+ * Setup View Component
+ * 
+ * Configuration screen where users select their addiction type and
+ * set their sobriety start date/time.
+ * 
+ * Features:
+ * - Categorized addiction selection
+ * - Search and filtering
+ * - Custom addiction input
+ * - Date and time picker
+ * - Category expansion/collapse
+ */
+
 "use client";
 
 import React, { useMemo } from "react";

@@ -1,3 +1,14 @@
+/**
+ * Community API Routes
+ * 
+ * This API provides endpoints for managing community features including
+ * posts, comments, reactions, and content moderation.
+ * 
+ * Endpoints:
+ * - GET: Fetch posts, comments, or reactions
+ * - POST: Create posts, add comments, toggle reactions, or flag content
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import {
   initializeCommunityTables,
@@ -11,9 +22,18 @@ import {
   hasUserFlagged,
 } from "~/lib/db";
 
-// Initialize tables on first request
+/**
+ * Database tables initialization flag
+ * Ensures tables are initialized only once per server instance
+ */
 let tablesInitialized = false;
 
+/**
+ * Ensures community tables are initialized before operations
+ * 
+ * Initializes the community-related database tables on first request.
+ * Subsequent calls do nothing (idempotent).
+ */
 async function ensureTablesExist() {
   if (!tablesInitialized) {
     await initializeCommunityTables();
@@ -21,7 +41,28 @@ async function ensureTablesExist() {
   }
 }
 
-// GET - Fetch posts for an addiction
+/**
+ * GET /api/community - Fetch community data
+ * 
+ * Retrieves posts, comments, or reactions based on query parameters.
+ * 
+ * Query Parameters:
+ * - addiction: Addiction type to filter posts (required)
+ * - postId: Specific post ID (optional, for comments/reactions)
+ * - action: "comments" or "reactions" (optional, requires postId)
+ * 
+ * Behaviors:
+ * 1. With addiction only: Returns all posts with their comments and reactions
+ * 2. With postId + action=comments: Returns comments for specific post
+ * 3. With postId + action=reactions: Returns reactions for specific post
+ * 
+ * @returns JSON response with posts/comments/reactions or error
+ * 
+ * Response Codes:
+ * - 200: Success
+ * - 400: Missing required parameters
+ * - 500: Server error
+ */
 export async function GET(request: NextRequest) {
   try {
     await ensureTablesExist();
@@ -38,22 +79,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get comments for a specific post
+    // Handle specific action requests for a post
     if (postId && action === "comments") {
       const comments = await getPostComments(postId);
       return NextResponse.json({ comments });
     }
 
-    // Get reactions for a specific post
     if (postId && action === "reactions") {
       const reactions = await getPostReactions(postId);
       return NextResponse.json({ reactions });
     }
 
-    // Get all posts for addiction
+    // Get all posts for addiction with full details
     const posts = await getCommunityPosts(addiction);
 
-    // For each post, get comments and reactions
+    // Enrich each post with its comments and reactions
     const postsWithDetails = await Promise.all(
       posts.map(async (post) => {
         const comments = await getPostComments(post.id);
@@ -76,7 +116,46 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create post, add comment, toggle reaction, or flag content
+/**
+ * POST /api/community - Perform community actions
+ * 
+ * Handles various community interactions based on the action parameter.
+ * 
+ * Request Body (all actions):
+ * - action: Action type (required)
+ * 
+ * Action: "create_post"
+ * - id: Unique post ID (required)
+ * - anonymousId: Anonymous user ID (required)
+ * - addiction: Addiction category (required)
+ * - content: Post text content (required)
+ * - timestamp: Unix timestamp (required)
+ * - milestone: Optional milestone badge text
+ * 
+ * Action: "add_comment"
+ * - id: Unique comment ID (required)
+ * - postId: Post to comment on (required)
+ * - anonymousId: Anonymous user ID (required)
+ * - content: Comment text (required)
+ * - timestamp: Unix timestamp (required)
+ * 
+ * Action: "toggle_reaction"
+ * - postId: Post to react to (required)
+ * - anonymousId: Anonymous user ID (required)
+ * - emoji: Emoji character (required)
+ * 
+ * Action: "flag"
+ * - targetType: "post" or "comment" (required)
+ * - targetId: ID of content to flag (required)
+ * - anonymousId: Anonymous user ID (required)
+ * 
+ * @returns JSON response with success status or error
+ * 
+ * Response Codes:
+ * - 200: Success
+ * - 400: Invalid action or missing required fields
+ * - 500: Server error
+ */
 export async function POST(request: NextRequest) {
   try {
     await ensureTablesExist();

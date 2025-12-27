@@ -1,9 +1,32 @@
+/**
+ * Farcaster Quick Auth API Route
+ * 
+ * This API provides authentication verification for Farcaster Quick Auth.
+ * It verifies JWT tokens issued by Farcaster and returns user information.
+ * 
+ * Endpoints:
+ * - GET: Verify JWT token and return user information
+ */
+
 import { Errors, createClient } from "@farcaster/quick-auth";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Farcaster Quick Auth client instance
+ */
 const client = createClient();
 
-// Helper function to determine the correct domain for JWT verification
+/**
+ * Determines the correct domain for JWT verification
+ * 
+ * Attempts to extract the domain from request headers in order of reliability:
+ * 1. Origin header (most reliable for CORS requests)
+ * 2. Host header
+ * 3. Environment variables (fallback)
+ * 
+ * @param request - Next.js request object
+ * @returns Domain/host string for JWT verification
+ */
 function getUrlHost(request: NextRequest): string {
   // First try to get the origin from the Origin header (most reliable for CORS requests)
   const origin = request.headers.get("origin");
@@ -22,7 +45,7 @@ function getUrlHost(request: NextRequest): string {
     return host;
   }
 
-  // Final fallback to environment variables (your original logic)
+  // Final fallback to environment variables
   let urlValue: string;
   if (process.env.VERCEL_ENV === "production") {
     urlValue = process.env.NEXT_PUBLIC_URL!;
@@ -36,20 +59,48 @@ function getUrlHost(request: NextRequest): string {
   return url.host;
 }
 
+/**
+ * GET /api/auth - Verify Farcaster Quick Auth token
+ * 
+ * Verifies a JWT token from Farcaster Quick Auth and returns user information.
+ * This endpoint is called via `sdk.quickAuth.fetch` from the MiniApp SDK,
+ * which automatically includes the Authorization header.
+ * 
+ * Headers:
+ * - Authorization: Bearer <jwt_token> (required)
+ * 
+ * @returns JSON response with user info or error
+ * 
+ * Response Codes:
+ * - 200: Success, token valid
+ * - 401: Missing or invalid token
+ * - 500: Server error
+ * 
+ * Success Response:
+ * ```json
+ * {
+ *   "success": true,
+ *   "user": {
+ *     "fid": 12345,
+ *     "issuedAt": 1234567890,
+ *     "expiresAt": 1234567890
+ *   }
+ * }
+ * ```
+ */
 export async function GET(request: NextRequest) {
-  // Because we're fetching this endpoint via `sdk.quickAuth.fetch`,
-  // if we're in a mini app, the request will include the necessary `Authorization` header.
+  // Extract Authorization header from request
+  // When called via sdk.quickAuth.fetch in a mini app, this header is automatically included
   const authorization = request.headers.get("Authorization");
 
-  // Here we ensure that we have a valid token.
+  // Ensure token is present and properly formatted
   if (!authorization || !authorization.startsWith("Bearer ")) {
     return NextResponse.json({ message: "Missing token" }, { status: 401 });
   }
 
   try {
-    // Now we verify the token. `domain` must match the domain of the request.
-    // In our case, we're using the `getUrlHost` function to get the domain of the request
-    // based on the Vercel environment. This will vary depending on your hosting provider.
+    // Verify the JWT token with Farcaster
+    // The domain must match the request domain for security
     const payload = await client.verifyJwt({
       token: authorization.split(" ")[1] as string,
       domain: getUrlHost(request),
@@ -57,10 +108,10 @@ export async function GET(request: NextRequest) {
 
     console.log("payload", payload);
 
-    // If the token was valid, `payload.sub` will be the user's Farcaster ID.
+    // Extract user's Farcaster ID from verified token
     const userFid = payload.sub;
 
-    // Return user information for your waitlist application
+    // Return verified user information
     return NextResponse.json({
       success: true,
       user: {
@@ -71,6 +122,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (e) {
+    // Handle specific error types
     if (e instanceof Errors.InvalidTokenError) {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 });
     }

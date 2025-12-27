@@ -1,3 +1,17 @@
+/**
+ * Pledge View Component
+ * 
+ * The initial commitment screen where users make their pledge to start
+ * their recovery journey. Captures motivation and optional wallet connection
+ * for additional features.
+ * 
+ * Features:
+ * - Motivation text capture
+ * - Optional Web3 wallet authentication
+ * - Support for multiple auth strategies (Farcaster, Google, Email)
+ * - Visual commitment ceremony
+ */
+
 "use client";
 
 import React, { useState } from "react";

@@ -1,3 +1,16 @@
+/**
+ * Frame Provider Component
+ * 
+ * Provides Farcaster MiniApp context to child components.
+ * Wraps the MiniKit hooks to make frame context available throughout
+ * the component tree.
+ * 
+ * Provides:
+ * - Frame context (user info, capabilities, etc.)
+ * - MiniApp detection
+ * - Context sharing via React Context
+ */
+
 'use client'
 
 import { useMiniKit, useIsInMiniApp } from '@coinbase/onchainkit/minikit';
