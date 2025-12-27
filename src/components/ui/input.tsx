@@ -1,3 +1,10 @@
+/**
+ * Input Component
+ * 
+ * Styled input component with Tailwind CSS classes.
+ * Provides consistent styling across the application.
+ */
+
 import * as React from "react"
 
 import { cn } from "~/lib/utils"

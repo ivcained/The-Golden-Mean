@@ -1,3 +1,18 @@
+/**
+ * Community View Component
+ * 
+ * Provides an anonymous community forum where users can share experiences,
+ * encourage each other, and interact safely without revealing their identity.
+ * 
+ * Features:
+ * - Anonymous posting with pseudonymous identifiers
+ * - Emoji reactions on posts
+ * - Comment threads
+ * - Content flagging/moderation
+ * - Real-time updates
+ * - Milestone badges for achievements
+ */
+
 "use client";
 
 import React, { useState, useEffect } from "react";

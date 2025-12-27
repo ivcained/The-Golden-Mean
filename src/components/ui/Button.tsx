@@ -1,3 +1,10 @@
+/**
+ * Button Component
+ * 
+ * Reusable button component with loading state support.
+ * Extends standard HTML button with additional features.
+ */
+
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   isLoading?: boolean;

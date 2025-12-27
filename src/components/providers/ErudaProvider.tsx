@@ -1,3 +1,13 @@
+/**
+ * Eruda Provider Component
+ * 
+ * Development tool provider that loads Eruda debugging console
+ * in non-production environments. Eruda provides mobile-friendly
+ * developer tools for debugging.
+ * 
+ * Only loads in development/preview environments.
+ */
+
 "use client";
 
 import { useEffect } from "react";
