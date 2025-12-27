@@ -1,51 +1,130 @@
+/**
+ * Database Operations and Models
+ * 
+ * This module provides all database operations for the Dhab recovery application,
+ * including user sobriety tracking and community features. It uses Vercel Postgres
+ * for data persistence.
+ * 
+ * Main features:
+ * - User sobriety data management (CRUD operations)
+ * - Community posts, comments, and reactions
+ * - Content flagging and moderation
+ * - Anonymous user interaction tracking
+ */
+
 import { sql } from "@vercel/postgres";
 
+/**
+ * User sobriety tracking data model
+ * 
+ * Stores all information related to a user's recovery journey,
+ * including start date, addiction type, progress tracking, and authentication details.
+ */
 export interface UserSobrietyData {
+  /** Farcaster ID - unique identifier for the user */
   fid: number;
+  /** Date when sobriety journey started (YYYY-MM-DD format) */
   startDate: string;
+  /** Time when sobriety started (HH:MM format, optional) */
   startTime: string;
+  /** Type of addiction being tracked */
   addiction: string;
+  /** Custom addiction name if not in predefined list */
   customAddiction?: string;
+  /** Estimated daily cost of the addiction in USD */
   dailyCost: number;
+  /** Personal motivation or reason for recovery */
   motivation?: string;
+  /** Date when user made their sobriety pledge */
   pledgeDate?: string;
+  /** User's wallet address for Web3 features */
   walletAddress?: string;
+  /** Authentication method used (farcaster, google, email) */
   authStrategy?: string;
+  /** Timestamp when record was created */
   createdAt?: Date;
+  /** Timestamp when record was last updated */
   updatedAt?: Date;
 }
 
+/**
+ * Community post data model
+ * 
+ * Represents a post made by a user in the community support forum.
+ */
 export interface CommunityPost {
+  /** Unique post identifier */
   id: string;
+  /** Anonymous identifier of the post author */
   anonymousId: string;
+  /** Addiction category this post relates to */
   addiction: string;
+  /** Text content of the post */
   content: string;
+  /** Optional milestone badge (e.g., "30 days sober") */
   milestone?: string;
+  /** Unix timestamp when post was created */
   timestamp: number;
-  reactions: string; // JSON string of reactions
+  /** JSON string containing reaction data */
+  reactions: string;
+  /** Number of times post has been flagged */
   flagCount: number;
+  /** Timestamp when record was created */
   createdAt?: Date;
 }
 
+/**
+ * Community comment data model
+ * 
+ * Represents a comment on a community post.
+ */
 export interface CommunityComment {
+  /** Unique comment identifier */
   id: string;
+  /** ID of the post this comment belongs to */
   postId: string;
+  /** Anonymous identifier of the comment author */
   anonymousId: string;
+  /** Text content of the comment */
   content: string;
+  /** Unix timestamp when comment was created */
   timestamp: number;
+  /** Number of times comment has been flagged */
   flagCount: number;
+  /** Timestamp when record was created */
   createdAt?: Date;
 }
 
+/**
+ * Community reaction data model
+ * 
+ * Represents an emoji reaction on a community post.
+ */
 export interface CommunityReaction {
+  /** Unique reaction identifier */
   id: string;
+  /** ID of the post this reaction belongs to */
   postId: string;
+  /** Anonymous identifier of the user who reacted */
   anonymousId: string;
+  /** Emoji character used for the reaction */
   emoji: string;
+  /** Timestamp when reaction was created */
   createdAt?: Date;
 }
 
-// Initialize the database table if it doesn't exist
+// ============================================
+// User Sobriety Database Functions
+// ============================================
+
+/**
+ * Initializes the user sobriety database table
+ * 
+ * Creates the user_sobriety table if it doesn't exist.
+ * This function is idempotent and safe to call multiple times.
+ * 
+ * @returns Promise with success status and optional error
+ */
 export async function initializeDatabase() {
   try {
     await sql`
@@ -71,7 +150,14 @@ export async function initializeDatabase() {
   }
 }
 
-// Get user sobriety data by FID
+/**
+ * Retrieves user sobriety data by Farcaster ID
+ * 
+ * Fetches all sobriety tracking information for a specific user.
+ * 
+ * @param fid - Farcaster ID of the user
+ * @returns Promise resolving to user data or null if not found
+ */
 export async function getUserSobrietyData(
   fid: number
 ): Promise<UserSobrietyData | null> {
@@ -105,7 +191,16 @@ export async function getUserSobrietyData(
   }
 }
 
-// Save or update user sobriety data
+/**
+ * Saves or updates user sobriety data
+ * 
+ * Inserts new user data or updates existing data if the FID already exists.
+ * Uses ON CONFLICT to perform upsert operation. Preserves existing wallet
+ * address and auth strategy if not provided in update.
+ * 
+ * @param data - User sobriety data to save
+ * @returns Promise with success status and optional error
+ */
 export async function saveUserSobrietyData(
   data: UserSobrietyData
 ): Promise<{ success: boolean; error?: unknown }> {
@@ -152,7 +247,15 @@ export async function saveUserSobrietyData(
   }
 }
 
-// Delete user sobriety data (for reset)
+/**
+ * Deletes user sobriety data
+ * 
+ * Removes all sobriety tracking data for a user. This is typically
+ * used when a user wants to reset their journey or delete their account.
+ * 
+ * @param fid - Farcaster ID of the user
+ * @returns Promise with success status and optional error
+ */
 export async function deleteUserSobrietyData(
   fid: number
 ): Promise<{ success: boolean; error?: unknown }> {
@@ -165,7 +268,17 @@ export async function deleteUserSobrietyData(
   }
 }
 
-// Update only the pledge date
+/**
+ * Updates only the pledge date and motivation
+ * 
+ * Used when a user makes or updates their sobriety pledge.
+ * Updates only these specific fields without affecting other data.
+ * 
+ * @param fid - Farcaster ID of the user
+ * @param pledgeDate - Date of the pledge (YYYY-MM-DD format)
+ * @param motivation - Optional motivation text
+ * @returns Promise with success status and optional error
+ */
 export async function updatePledgeDate(
   fid: number,
   pledgeDate: string,
@@ -186,7 +299,16 @@ export async function updatePledgeDate(
   }
 }
 
-// Update daily cost
+/**
+ * Updates the daily cost estimate
+ * 
+ * Allows users to update their estimated daily cost of their addiction,
+ * which is used to calculate money saved during recovery.
+ * 
+ * @param fid - Farcaster ID of the user
+ * @param dailyCost - New daily cost in USD
+ * @returns Promise with success status and optional error
+ */
 export async function updateDailyCost(
   fid: number,
   dailyCost: number
@@ -209,7 +331,21 @@ export async function updateDailyCost(
 // Community Posts Database Functions
 // ============================================
 
-// Initialize community tables
+/**
+ * Initializes all community-related database tables
+ * 
+ * Creates tables for posts, comments, reactions, and flags if they don't exist.
+ * Sets up foreign key relationships and constraints for data integrity.
+ * This function is idempotent and safe to call multiple times.
+ * 
+ * Tables created:
+ * - community_posts: User posts with content and metadata
+ * - community_comments: Comments on posts
+ * - community_reactions: Emoji reactions on posts
+ * - community_flags: Content moderation flags
+ * 
+ * @returns Promise with success status and optional error
+ */
 export async function initializeCommunityTables() {
   try {
     // Posts table
@@ -270,7 +406,15 @@ export async function initializeCommunityTables() {
   }
 }
 
-// Create a new post
+/**
+ * Creates a new community post
+ * 
+ * Inserts a new post into the community feed. Posts are associated with
+ * an addiction category and authored by an anonymous user.
+ * 
+ * @param post - Post data including id, anonymousId, addiction, content, etc.
+ * @returns Promise with success status and optional error
+ */
 export async function createCommunityPost(post: {
   id: string;
   anonymousId: string;
@@ -293,7 +437,15 @@ export async function createCommunityPost(post: {
   }
 }
 
-// Get posts by addiction
+/**
+ * Retrieves community posts for a specific addiction
+ * 
+ * Fetches the most recent posts related to a specific addiction type,
+ * limited to 100 posts, ordered by newest first.
+ * 
+ * @param addiction - The addiction category to filter by
+ * @returns Promise resolving to array of community posts
+ */
 export async function getCommunityPosts(
   addiction: string
 ): Promise<CommunityPost[]> {
@@ -320,7 +472,15 @@ export async function getCommunityPosts(
   }
 }
 
-// Get comments for a post
+/**
+ * Retrieves all comments for a specific post
+ * 
+ * Fetches comments ordered chronologically (oldest first) to maintain
+ * conversation flow.
+ * 
+ * @param postId - The post ID to get comments for
+ * @returns Promise resolving to array of comments
+ */
 export async function getPostComments(
   postId: string
 ): Promise<CommunityComment[]> {
@@ -345,7 +505,15 @@ export async function getPostComments(
   }
 }
 
-// Add a comment to a post
+/**
+ * Adds a comment to a post
+ * 
+ * Inserts a new comment on a community post. Comments are anonymous
+ * and associated with the post via postId.
+ * 
+ * @param comment - Comment data including id, postId, anonymousId, content, etc.
+ * @returns Promise with success status and optional error
+ */
 export async function addPostComment(comment: {
   id: string;
   postId: string;
@@ -365,7 +533,15 @@ export async function addPostComment(comment: {
   }
 }
 
-// Get reactions for a post
+/**
+ * Retrieves all reactions for a post
+ * 
+ * Aggregates reactions by emoji type, counting how many users reacted
+ * with each emoji and listing their anonymous IDs.
+ * 
+ * @param postId - The post ID to get reactions for
+ * @returns Promise resolving to array of reaction summaries with counts
+ */
 export async function getPostReactions(
   postId: string
 ): Promise<{ emoji: string; count: number; users: string[] }[]> {
@@ -387,7 +563,17 @@ export async function getPostReactions(
   }
 }
 
-// Toggle reaction on a post
+/**
+ * Toggles a reaction on a post
+ * 
+ * Adds a reaction if it doesn't exist, or removes it if it does.
+ * Ensures users can only react once with each emoji type.
+ * 
+ * @param postId - The post ID to react to
+ * @param anonymousId - Anonymous identifier of the reacting user
+ * @param emoji - Emoji character to react with
+ * @returns Promise with success status and whether reaction was added (true) or removed (false)
+ */
 export async function togglePostReaction(
   postId: string,
   anonymousId: string,
@@ -419,7 +605,18 @@ export async function togglePostReaction(
   }
 }
 
-// Flag a post or comment
+/**
+ * Flags content for moderation
+ * 
+ * Records a flag from a user on either a post or comment. Users can only
+ * flag each piece of content once. Increments the flag count on the content.
+ * Content with FLAG_THRESHOLD or more flags should be hidden.
+ * 
+ * @param targetType - Type of content being flagged ("post" or "comment")
+ * @param targetId - ID of the content being flagged
+ * @param anonymousId - Anonymous identifier of the flagging user
+ * @returns Promise with success status and whether content was already flagged
+ */
 export async function flagContent(
   targetType: "post" | "comment",
   targetId: string,
@@ -461,7 +658,17 @@ export async function flagContent(
   }
 }
 
-// Check if user has flagged content
+/**
+ * Checks if a user has flagged specific content
+ * 
+ * Determines whether a user has already flagged a post or comment,
+ * used to prevent duplicate flags and update UI state.
+ * 
+ * @param targetType - Type of content ("post" or "comment")
+ * @param targetId - ID of the content
+ * @param anonymousId - Anonymous identifier of the user
+ * @returns Promise resolving to true if user has flagged this content
+ */
 export async function hasUserFlagged(
   targetType: "post" | "comment",
   targetId: string,
