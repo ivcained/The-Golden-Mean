@@ -118,7 +118,7 @@ export default function SetupView({
                 Start Date
               </label>
               <div 
-                className="relative cursor-pointer"
+                className="relative cursor-pointer group"
                 onClick={() => dateInputRef.current?.showPicker?.()}
               >
                 <input
@@ -127,8 +127,11 @@ export default function SetupView({
                   value={formData.startDate}
                   onChange={(e) => setFormData({ startDate: e.target.value })}
                   max={new Date().toISOString().split("T")[0]}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer hover:border-cyan-300 transition-colors"
+                  className="w-full px-4 py-3 pr-12 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer hover:border-cyan-300 transition-colors group-hover:bg-slate-50"
                 />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-cyan-500 transition-colors">
+                  📅
+                </div>
               </div>
             </div>
             <div>
@@ -136,7 +139,7 @@ export default function SetupView({
                 Start Time (optional)
               </label>
               <div 
-                className="relative cursor-pointer"
+                className="relative cursor-pointer group"
                 onClick={() => timeInputRef.current?.showPicker?.()}
               >
                 <input
@@ -144,8 +147,11 @@ export default function SetupView({
                   type="time"
                   value={formData.startTime}
                   onChange={(e) => setFormData({ startTime: e.target.value })}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer hover:border-cyan-300 transition-colors"
+                  className="w-full px-4 py-3 pr-12 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer hover:border-cyan-300 transition-colors group-hover:bg-slate-50"
                 />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-cyan-500 transition-colors">
+                  🕒
+                </div>
               </div>
             </div>
           </div>
