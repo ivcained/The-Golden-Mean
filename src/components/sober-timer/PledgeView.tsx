@@ -100,6 +100,7 @@ const motivationOptions = [
     text: "To rebuild trust with my partner.",
     type: "image",
     bgColor: "bg-gradient-to-b from-slate-600 to-slate-700",
+    textColor: "text-white",
   },
   {
     id: "health",
@@ -348,7 +349,7 @@ export default function PledgeView({
                   <div className="absolute inset-0 flex items-end p-4">
                     <p
                       className={`font-medium text-left ${
-                        option.textColor || (option.id === "partner" ? "text-white" : "text-slate-700")
+                        option.textColor || "text-slate-700"
                       }`}
                     >
                       {option.text}
