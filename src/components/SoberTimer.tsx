@@ -192,13 +192,7 @@ export default function SoberTimer() {
             localStorage.setItem("soberTimerData", JSON.stringify(dbData));
             localStorage.setItem("allAddictions", JSON.stringify(allResult.data));
 
-            if (dbData.startDate && dbData.addiction) {
-              setView("timer");
-            } else if (
-              dbData.pledgeDate === new Date().toISOString().split("T")[0]
-            ) {
-              setView("setup");
-            }
+            // Keep default view as "pledge" - user can navigate from there
             setIsLoading(false);
             return;
           }
@@ -222,13 +216,7 @@ export default function SoberTimer() {
       if (saved) {
         const parsed = JSON.parse(saved) as SoberTimerData;
         setFormData({ ...parsed, dailyCost: parsed.dailyCost || 8 });
-        if (parsed.startDate && parsed.addiction) {
-          setView("timer");
-        } else if (
-          parsed.pledgeDate === new Date().toISOString().split("T")[0]
-        ) {
-          setView("setup");
-        }
+        // Keep default view as "pledge" - user can navigate from there
 
         // If we have FID and localStorage data, sync to database
         if (userFid && parsed.startDate && parsed.addiction) {
