@@ -31,6 +31,7 @@ import { generateAnonymousId } from "~/lib/community";
 import { useFrameContext } from "./providers/FrameProvider";
 
 interface SoberTimerData {
+  id?: string;
   startDate: string;
   startTime: string;
   addiction: string;
@@ -40,6 +41,7 @@ interface SoberTimerData {
   pledgeDate?: string;
   walletAddress?: string;
   authStrategy?: string;
+  isActive?: boolean;
 }
 
 interface MiniAppContext {
@@ -64,6 +66,7 @@ type TimerTabType = "summary" | "savings";
 export default function SoberTimer() {
   const frameContext = useFrameContext();
   const [view, setView] = useState<ViewType>("pledge");
+  const [allAddictions, setAllAddictions] = useState<SoberTimerData[]>([]);
   const [formData, setFormData] = useState<SoberTimerData>({
     startDate: "",
     startTime: "",
@@ -74,6 +77,7 @@ export default function SoberTimer() {
     pledgeDate: "",
     walletAddress: "",
     authStrategy: "",
+    isActive: true,
   });
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -110,11 +114,11 @@ export default function SoberTimer() {
   // Save data to database
   const saveToDatabase = useCallback(
     async (data: SoberTimerData) => {
-      if (!userFid) return;
+      if (!userFid) return null;
 
       setIsSaving(true);
       try {
-        await fetch("/api/sobriety", {
+        const response = await fetch("/api/sobriety", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -122,8 +126,11 @@ export default function SoberTimer() {
             ...data,
           }),
         });
+        const result = await response.json();
+        return result.id || data.id;
       } catch (error) {
         console.error("Failed to save to database:", error);
+        return null;
       } finally {
         setIsSaving(false);
       }
@@ -158,24 +165,32 @@ export default function SoberTimer() {
       // If user has FID, try to load from database first
       if (userFid) {
         try {
-          const response = await fetch(`/api/sobriety?fid=${userFid}`);
-          const result = await response.json();
-
-          if (result.data) {
+          // Load all addictions
+          const allResponse = await fetch(`/api/sobriety?fid=${userFid}&all=true`);
+          const allResult = await allResponse.json();
+          
+          if (allResult.data && allResult.data.length > 0) {
+            setAllAddictions(allResult.data);
+            
+            // Find the active addiction
+            const activeAddiction = allResult.data.find((a: SoberTimerData) => a.isActive) || allResult.data[0];
             const dbData: SoberTimerData = {
-              startDate: result.data.startDate || "",
-              startTime: result.data.startTime || "",
-              addiction: result.data.addiction || "",
-              customAddiction: result.data.customAddiction || "",
-              dailyCost: result.data.dailyCost || 8,
-              motivation: result.data.motivation || "",
-              pledgeDate: result.data.pledgeDate || "",
-              walletAddress: result.data.walletAddress || "",
-              authStrategy: result.data.authStrategy || "",
+              id: activeAddiction.id,
+              startDate: activeAddiction.startDate || "",
+              startTime: activeAddiction.startTime || "",
+              addiction: activeAddiction.addiction || "",
+              customAddiction: activeAddiction.customAddiction || "",
+              dailyCost: activeAddiction.dailyCost || 8,
+              motivation: activeAddiction.motivation || "",
+              pledgeDate: activeAddiction.pledgeDate || "",
+              walletAddress: activeAddiction.walletAddress || "",
+              authStrategy: activeAddiction.authStrategy || "",
+              isActive: activeAddiction.isActive,
             };
             setFormData(dbData);
             // Also save to localStorage as backup
             localStorage.setItem("soberTimerData", JSON.stringify(dbData));
+            localStorage.setItem("allAddictions", JSON.stringify(allResult.data));
 
             if (dbData.startDate && dbData.addiction) {
               setView("timer");
@@ -194,6 +209,16 @@ export default function SoberTimer() {
 
       // Fallback to localStorage
       const saved = localStorage.getItem("soberTimerData");
+      const savedAll = localStorage.getItem("allAddictions");
+      if (savedAll) {
+        try {
+          const parsedAll = JSON.parse(savedAll) as SoberTimerData[];
+          setAllAddictions(parsedAll);
+        } catch (e) {
+          console.error("Failed to parse all addictions:", e);
+        }
+      }
+      
       if (saved) {
         const parsed = JSON.parse(saved) as SoberTimerData;
         setFormData({ ...parsed, dailyCost: parsed.dailyCost || 8 });
@@ -264,12 +289,35 @@ export default function SoberTimer() {
         .padStart(2, "0")}`;
     }
 
-    const data = { ...formData, addiction, startTime };
+    const data = { ...formData, addiction, startTime, isActive: true };
+    
+    // Save to database if user has FID and get the ID back
+    const savedId = await saveToDatabase(data);
+    if (savedId) {
+      data.id = savedId;
+    }
+    
+    // Update allAddictions array
+    const updatedAddictions = [...allAddictions];
+    if (data.id) {
+      const existingIndex = updatedAddictions.findIndex(a => a.id === data.id);
+      if (existingIndex >= 0) {
+        updatedAddictions[existingIndex] = data;
+      } else {
+        // Mark all others as inactive
+        updatedAddictions.forEach(a => a.isActive = false);
+        updatedAddictions.push(data);
+      }
+    } else {
+      // Mark all others as inactive
+      updatedAddictions.forEach(a => a.isActive = false);
+      updatedAddictions.push(data);
+    }
+    
+    setAllAddictions(updatedAddictions);
     localStorage.setItem("soberTimerData", JSON.stringify(data));
+    localStorage.setItem("allAddictions", JSON.stringify(updatedAddictions));
     setFormData(data);
-
-    // Save to database if user has FID
-    await saveToDatabase(data);
 
     setView("timer");
   };
@@ -302,6 +350,8 @@ export default function SoberTimer() {
     }
 
     localStorage.removeItem("soberTimerData");
+    localStorage.removeItem("allAddictions");
+    setAllAddictions([]);
     setFormData({
       startDate: "",
       startTime: "",
@@ -312,12 +362,65 @@ export default function SoberTimer() {
       pledgeDate: "",
       walletAddress: "",
       authStrategy: "",
+      isActive: true,
     });
     setView("setup");
     setShowCustomInput(false);
     setExpandedCategory(null);
     setSearchQuery("");
     setActiveTimerTab("summary");
+  };
+
+  const handleSwitchAddiction = async (addictionId: string) => {
+    const addiction = allAddictions.find(a => a.id === addictionId);
+    if (!addiction) return;
+
+    // Update active status in database if user has FID
+    if (userFid) {
+      try {
+        await fetch("/api/sobriety", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "set_active",
+            fid: userFid,
+            addictionId,
+          }),
+        });
+      } catch (error) {
+        console.error("Failed to set active addiction:", error);
+      }
+    }
+
+    // Update local state
+    const updatedAddictions = allAddictions.map(a => ({
+      ...a,
+      isActive: a.id === addictionId,
+    }));
+    setAllAddictions(updatedAddictions);
+    setFormData({ ...addiction, isActive: true });
+    localStorage.setItem("soberTimerData", JSON.stringify({ ...addiction, isActive: true }));
+    localStorage.setItem("allAddictions", JSON.stringify(updatedAddictions));
+  };
+
+  const handleAddNewAddiction = () => {
+    // Reset form for new addiction
+    setFormData({
+      startDate: "",
+      startTime: "",
+      addiction: "",
+      customAddiction: "",
+      dailyCost: 8,
+      motivation: formData.motivation, // Keep motivation
+      pledgeDate: formData.pledgeDate, // Keep pledge
+      walletAddress: formData.walletAddress, // Keep wallet
+      authStrategy: formData.authStrategy, // Keep auth
+      isActive: true,
+    });
+    setShowCustomInput(false);
+    setExpandedCategory(null);
+    setSearchQuery("");
+    setView("setup");
   };
 
   const handleCostUpdate = async () => {
@@ -414,6 +517,10 @@ export default function SoberTimer() {
         handleCostUpdate={handleCostUpdate}
         handleReset={handleReset}
         onOpenCommunity={() => setView("community")}
+        allAddictions={allAddictions}
+        currentAddictionId={formData.id}
+        onSwitchAddiction={handleSwitchAddiction}
+        onAddNewAddiction={handleAddNewAddiction}
       />
     );
   }
@@ -429,7 +536,7 @@ export default function SoberTimer() {
       showCustomInput={showCustomInput}
       setShowCustomInput={setShowCustomInput}
       handleStartTimer={handleStartTimer}
-      onBack={() => setView("pledge")}
+      onBack={allAddictions.length > 0 ? () => setView("timer") : () => setView("pledge")}
     />
   );
 }
