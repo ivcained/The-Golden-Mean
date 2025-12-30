@@ -183,12 +183,14 @@ export default function PledgeView({
 
   const handleConfirmPledge = () => {
     if (selectedMotivations.length > 0 && selectedPledge) {
-      const pledgeText = pledgeOptions.find((p) => p.id === selectedPledge)?.text || "";
+      const pledge = pledgeOptions.find((p) => p.id === selectedPledge);
+      if (!pledge) return; // Safety check - should never happen since button is disabled
+      
       const motivationTexts = selectedMotivations
         .map((id) => motivationOptions.find((m) => m.id === id)?.text)
         .filter(Boolean)
         .join(", ");
-      const fullMotivation = `${pledgeText}. ${motivationTexts}`;
+      const fullMotivation = `${pledge.text}. ${motivationTexts}`;
       onPledgeConfirmed(fullMotivation, walletAddress || undefined);
     }
   };
