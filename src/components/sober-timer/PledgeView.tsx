@@ -202,10 +202,10 @@ export default function PledgeView({
         <div className="w-full max-w-lg mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100">
-            <button onClick={onClose} className="text-slate-400 text-2xl">
+            <button onClick={onClose} className="text-slate-600 text-2xl">
               ✕
             </button>
-            <h1 className="text-sm font-semibold text-slate-500 tracking-wide uppercase">
+            <h1 className="text-sm font-semibold text-slate-700 tracking-wide uppercase">
               Welcome
             </h1>
             <div className="w-8" />
@@ -219,7 +219,7 @@ export default function PledgeView({
             <h1 className="text-2xl font-bold text-slate-800 mb-2">
               Sober Timer
             </h1>
-            <p className="text-slate-500">
+            <p className="text-slate-700">
               Track your journey to a healthier life
             </p>
           </div>
@@ -239,15 +239,15 @@ export default function PledgeView({
             <div className="grid grid-cols-3 gap-4 text-center">
               <div className="p-3">
                 <div className="text-2xl mb-1">⏱️</div>
-                <p className="text-xs text-slate-500">Track Time</p>
+                <p className="text-xs text-slate-700">Track Time</p>
               </div>
               <div className="p-3">
                 <div className="text-2xl mb-1">💰</div>
-                <p className="text-xs text-slate-500">Save Money</p>
+                <p className="text-xs text-slate-700">Save Money</p>
               </div>
               <div className="p-3">
                 <div className="text-2xl mb-1">👥</div>
-                <p className="text-xs text-slate-500">Community</p>
+                <p className="text-xs text-slate-700">Community</p>
               </div>
             </div>
           </div>
@@ -264,11 +264,11 @@ export default function PledgeView({
         <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100">
           <button
             onClick={() => setStep("login")}
-            className="text-slate-400 text-2xl"
+            className="text-slate-600 text-2xl"
           >
             ←
           </button>
-          <h1 className="text-sm font-semibold text-slate-500 tracking-wide uppercase">
+          <h1 className="text-sm font-semibold text-slate-700 tracking-wide uppercase">
             Pledge for {getDayName()}
           </h1>
           <div className="w-8">
@@ -289,7 +289,7 @@ export default function PledgeView({
             <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               <span>Connected via {authStrategy}</span>
-              <span className="font-mono text-xs text-slate-400">
+              <span className="font-mono text-xs text-slate-500">
                 {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
               </span>
             </div>
