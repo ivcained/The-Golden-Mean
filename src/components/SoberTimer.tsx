@@ -277,9 +277,9 @@ export default function SoberTimer() {
         .padStart(2, "0")}`;
     }
 
-    // Generate a local ID if one doesn't exist
-    const localId = formData.id || `local-${addiction.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
-    const data = { ...formData, id: localId, addiction, startTime, isActive: true };
+    // Generate a local ID if one doesn't exist (will be replaced with DB ID if saved)
+    const effectiveId = formData.id || `local-${addiction.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+    const data = { ...formData, id: effectiveId, addiction, startTime, isActive: true };
     
     // Save to database if user has FID and get the ID back
     const savedId = await saveToDatabase(data);
