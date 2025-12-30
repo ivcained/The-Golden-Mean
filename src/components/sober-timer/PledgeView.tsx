@@ -79,6 +79,7 @@ const motivationOptions = [
     text: "For my kids to have a present father.",
     type: "image",
     bgColor: "bg-gradient-to-b from-amber-100 to-green-100",
+    textColor: "text-slate-900",
   },
   {
     id: "family",
@@ -99,12 +100,14 @@ const motivationOptions = [
     text: "To rebuild trust with my partner.",
     type: "image",
     bgColor: "bg-gradient-to-b from-slate-600 to-slate-700",
+    textColor: "text-white",
   },
   {
     id: "health",
     text: "Physical health & fitness",
     type: "image",
     bgColor: "bg-gradient-to-b from-green-200 to-green-300",
+    textColor: "text-slate-700",
   },
   {
     id: "better",
@@ -262,12 +265,7 @@ export default function PledgeView({
       <div className="w-full max-w-lg mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100">
-          <button
-            onClick={() => setStep("login")}
-            className="text-slate-600 text-2xl"
-          >
-            ←
-          </button>
+          <div className="w-8" />
           <h1 className="text-sm font-semibold text-slate-700 tracking-wide uppercase">
             Pledge for {getDayName()}
           </h1>
@@ -352,9 +350,7 @@ export default function PledgeView({
                   <div className="absolute inset-0 flex items-end p-4">
                     <p
                       className={`font-medium text-left ${
-                        option.id === "partner" || option.id === "kids"
-                          ? "text-white"
-                          : "text-slate-700"
+                        option.textColor || "text-slate-700"
                       }`}
                     >
                       {option.text}
