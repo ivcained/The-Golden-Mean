@@ -14,7 +14,7 @@
 
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useRef } from "react";
 import { addictionCategories } from "~/lib/addictions";
 
 interface FormData {
@@ -54,6 +54,14 @@ export default function SetupView({
   handleStartTimer,
   onBack,
 }: SetupViewProps) {
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const timeInputRef = useRef<HTMLInputElement>(null);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const filteredCategories = useMemo(() => {
     if (!searchQuery) return addictionCategories;
     const q = searchQuery.toLowerCase();
@@ -109,24 +117,36 @@ export default function SetupView({
               <label className="block text-sm font-medium text-slate-600 mb-2">
                 Start Date
               </label>
-              <input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ startDate: e.target.value })}
-                max={new Date().toISOString().split("T")[0]}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
+              <div 
+                className="relative cursor-pointer"
+                onClick={() => dateInputRef.current?.showPicker?.()}
+              >
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ startDate: e.target.value })}
+                  max={new Date().toISOString().split("T")[0]}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer hover:border-cyan-300 transition-colors"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-2">
                 Start Time (optional)
               </label>
-              <input
-                type="time"
-                value={formData.startTime}
-                onChange={(e) => setFormData({ startTime: e.target.value })}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
+              <div 
+                className="relative cursor-pointer"
+                onClick={() => timeInputRef.current?.showPicker?.()}
+              >
+                <input
+                  ref={timeInputRef}
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ startTime: e.target.value })}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer hover:border-cyan-300 transition-colors"
+                />
+              </div>
             </div>
           </div>
         </div>
