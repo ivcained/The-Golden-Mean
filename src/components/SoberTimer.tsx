@@ -277,7 +277,9 @@ export default function SoberTimer() {
         .padStart(2, "0")}`;
     }
 
-    const data = { ...formData, addiction, startTime, isActive: true };
+    // Generate a local ID if one doesn't exist
+    const localId = formData.id || `local-${addiction.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+    const data = { ...formData, id: localId, addiction, startTime, isActive: true };
     
     // Save to database if user has FID and get the ID back
     const savedId = await saveToDatabase(data);
@@ -287,17 +289,11 @@ export default function SoberTimer() {
     
     // Update allAddictions array
     const updatedAddictions = [...allAddictions];
-    if (data.id) {
-      const existingIndex = updatedAddictions.findIndex(a => a.id === data.id);
-      if (existingIndex >= 0) {
-        updatedAddictions[existingIndex] = data;
-      } else {
-        // Mark all others as inactive
-        updatedAddictions.forEach(a => a.isActive = false);
-        updatedAddictions.push(data);
-      }
+    const existingIndex = updatedAddictions.findIndex(a => a.id === data.id);
+    if (existingIndex >= 0) {
+      updatedAddictions[existingIndex] = data;
     } else {
-      // Mark all others as inactive
+      // Mark all others as inactive and add new addiction
       updatedAddictions.forEach(a => a.isActive = false);
       updatedAddictions.push(data);
     }
