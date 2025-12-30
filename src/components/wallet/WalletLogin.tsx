@@ -126,7 +126,7 @@ export default function WalletLogin({
           <span className="text-white text-2xl">✓</span>
         </div>
         <p className="text-slate-700 font-medium">Connected!</p>
-        <p className="text-slate-500 text-sm mt-1">Proceeding to pledge...</p>
+        <p className="text-slate-600 text-sm mt-1">Proceeding to pledge...</p>
       </div>
     );
   }
@@ -138,7 +138,7 @@ export default function WalletLogin({
         <h2 className="text-xl font-semibold text-slate-800">
           Connect Your Wallet
         </h2>
-        <p className="text-slate-500 text-sm mt-1">
+        <p className="text-slate-700 text-sm mt-1">
           Sign in to save your progress across devices
         </p>
       </div>
@@ -161,7 +161,7 @@ export default function WalletLogin({
           <div className="w-full border-t border-slate-200"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-slate-500">or</span>
+          <span className="px-2 bg-white text-slate-600">or</span>
         </div>
       </div>
 
@@ -169,14 +169,14 @@ export default function WalletLogin({
       {onSkip && (
         <button
           onClick={onSkip}
-          className="w-full text-slate-500 text-sm hover:text-slate-700 py-2"
+          className="w-full text-slate-700 text-sm hover:text-slate-900 py-2 font-medium"
         >
           Continue without signing in
         </button>
       )}
 
       {/* Privacy Note */}
-      <p className="text-center text-xs text-slate-400 mt-6">
+      <p className="text-center text-xs text-slate-600 mt-6">
         By continuing, you agree to our Terms of Service and Privacy Policy.
         Your wallet is non-custodial and secure.
       </p>
