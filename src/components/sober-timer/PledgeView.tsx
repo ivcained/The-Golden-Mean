@@ -107,6 +107,7 @@ const motivationOptions = [
     text: "Physical health & fitness",
     type: "image",
     bgColor: "bg-gradient-to-b from-green-200 to-green-300",
+    textColor: "text-slate-700",
   },
   {
     id: "better",
