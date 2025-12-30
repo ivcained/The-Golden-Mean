@@ -20,6 +20,7 @@ import React from "react";
 interface TimerViewProps {
   addiction: string;
   startDate: string;
+  startTime: string;
   timerDisplay: {
     days: number;
     hours: number;
@@ -36,11 +37,19 @@ interface TimerViewProps {
   handleCostUpdate: () => void;
   handleReset: () => void;
   onOpenCommunity: () => void;
+  isEditingDateTime: boolean;
+  tempStartDate: string;
+  tempStartTime: string;
+  setTempStartDate: (val: string) => void;
+  setTempStartTime: (val: string) => void;
+  setIsEditingDateTime: (val: boolean) => void;
+  handleDateTimeUpdate: () => void;
 }
 
 export default function TimerView({
   addiction,
   startDate,
+  startTime,
   timerDisplay,
   activeTab,
   setActiveTab,
@@ -52,6 +61,13 @@ export default function TimerView({
   handleCostUpdate,
   handleReset,
   onOpenCommunity,
+  isEditingDateTime,
+  tempStartDate,
+  tempStartTime,
+  setTempStartDate,
+  setTempStartTime,
+  setIsEditingDateTime,
+  handleDateTimeUpdate,
 }: TimerViewProps) {
   const totalDays = timerDisplay.days + timerDisplay.hours / 24;
   const currentSavings = totalDays * dailyCost;
@@ -256,15 +272,63 @@ export default function TimerView({
                 <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
                   <span className="text-cyan-400">🏆</span>
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="font-medium text-white">{getMilestone()}</p>
-                  <p className="text-sm text-slate-400">
-                    Started:{" "}
-                    {new Date(startDate).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </p>
+                  {isEditingDateTime ? (
+                    <div className="flex flex-col gap-2 mt-2">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-slate-400 w-12">Date:</label>
+                        <input
+                          type="date"
+                          value={tempStartDate}
+                          onChange={(e) => setTempStartDate(e.target.value)}
+                          max={new Date().toISOString().split("T")[0]}
+                          className="flex-1 px-2 py-1 bg-slate-700 text-white text-sm rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-slate-400 w-12">Time:</label>
+                        <input
+                          type="time"
+                          value={tempStartTime}
+                          onChange={(e) => setTempStartTime(e.target.value)}
+                          className="flex-1 px-2 py-1 bg-slate-700 text-white text-sm rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
+                      </div>
+                      <div className="flex gap-2 mt-1">
+                        <button
+                          onClick={handleDateTimeUpdate}
+                          className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 text-white text-xs rounded"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setIsEditingDateTime(false)}
+                          className="px-3 py-1 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setTempStartDate(startDate);
+                        setTempStartTime(startTime || "00:00");
+                        setIsEditingDateTime(true);
+                      }}
+                      className="text-sm text-slate-400 hover:text-cyan-400 transition-colors text-left mt-1 flex items-center gap-1"
+                    >
+                      Started:{" "}
+                      {new Date(startDate).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                      {startTime && ` at ${startTime}`} ✎
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

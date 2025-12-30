@@ -87,6 +87,9 @@ export default function SoberTimer() {
   const [activeTimerTab, setActiveTimerTab] = useState<TimerTabType>("summary");
   const [isEditingCost, setIsEditingCost] = useState(false);
   const [tempCost, setTempCost] = useState("");
+  const [isEditingDateTime, setIsEditingDateTime] = useState(false);
+  const [tempStartDate, setTempStartDate] = useState("");
+  const [tempStartTime, setTempStartTime] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [contextReady, setContextReady] = useState(false);
@@ -333,6 +336,29 @@ export default function SoberTimer() {
     setIsEditingCost(false);
   };
 
+  const handleDateTimeUpdate = async () => {
+    if (!tempStartDate) {
+      alert("Please select a start date");
+      return;
+    }
+
+    // Validate that the date is not in the future
+    const selectedDateTime = new Date(`${tempStartDate}T${tempStartTime || "00:00"}`);
+    if (selectedDateTime > new Date()) {
+      alert("Start date and time cannot be in the future");
+      return;
+    }
+
+    const data = { ...formData, startDate: tempStartDate, startTime: tempStartTime };
+    setFormData(data);
+    localStorage.setItem("soberTimerData", JSON.stringify(data));
+
+    // Save to database if user has FID
+    await saveToDatabase(data);
+
+    setIsEditingDateTime(false);
+  };
+
   const handlePledgeConfirmed = async (
     motivation: string,
     walletAddress?: string
@@ -403,6 +429,7 @@ export default function SoberTimer() {
       <TimerView
         addiction={formData.addiction}
         startDate={formData.startDate}
+        startTime={formData.startTime}
         timerDisplay={timerDisplay}
         activeTab={activeTimerTab}
         setActiveTab={setActiveTimerTab}
@@ -414,6 +441,13 @@ export default function SoberTimer() {
         handleCostUpdate={handleCostUpdate}
         handleReset={handleReset}
         onOpenCommunity={() => setView("community")}
+        isEditingDateTime={isEditingDateTime}
+        tempStartDate={tempStartDate}
+        tempStartTime={tempStartTime}
+        setTempStartDate={setTempStartDate}
+        setTempStartTime={setTempStartTime}
+        setIsEditingDateTime={setIsEditingDateTime}
+        handleDateTimeUpdate={handleDateTimeUpdate}
       />
     );
   }
