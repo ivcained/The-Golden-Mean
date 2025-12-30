@@ -21,6 +21,8 @@ import { sql } from "@vercel/postgres";
  * including start date, addiction type, progress tracking, and authentication details.
  */
 export interface UserSobrietyData {
+  /** Unique identifier for this addiction record */
+  id?: string;
   /** Farcaster ID - unique identifier for the user */
   fid: number;
   /** Date when sobriety journey started (YYYY-MM-DD format) */
@@ -41,6 +43,8 @@ export interface UserSobrietyData {
   walletAddress?: string;
   /** Authentication method used (farcaster, google, email) */
   authStrategy?: string;
+  /** Whether this is the currently active addiction being tracked */
+  isActive?: boolean;
   /** Timestamp when record was created */
   createdAt?: Date;
   /** Timestamp when record was last updated */
@@ -127,6 +131,27 @@ export interface CommunityReaction {
  */
 export async function initializeDatabase() {
   try {
+    // Create the new multi-addiction table structure
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_sobriety_addictions (
+        id VARCHAR(50) PRIMARY KEY,
+        fid INTEGER NOT NULL,
+        start_date VARCHAR(10) NOT NULL,
+        start_time VARCHAR(5),
+        addiction VARCHAR(255) NOT NULL,
+        custom_addiction VARCHAR(255),
+        daily_cost DECIMAL(10, 2) DEFAULT 8.00,
+        motivation TEXT,
+        pledge_date VARCHAR(10),
+        wallet_address VARCHAR(42),
+        auth_strategy VARCHAR(50),
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    
+    // Keep the old table for backwards compatibility and migration
     await sql`
       CREATE TABLE IF NOT EXISTS user_sobriety (
         fid INTEGER PRIMARY KEY,
@@ -154,6 +179,8 @@ export async function initializeDatabase() {
  * Retrieves user sobriety data by Farcaster ID
  * 
  * Fetches all sobriety tracking information for a specific user.
+ * Now returns data from the new multi-addiction table if available,
+ * with fallback to old table for backwards compatibility.
  * 
  * @param fid - Farcaster ID of the user
  * @returns Promise resolving to user data or null if not found
@@ -162,6 +189,34 @@ export async function getUserSobrietyData(
   fid: number
 ): Promise<UserSobrietyData | null> {
   try {
+    // Try to get the active addiction from the new table
+    const newResult = await sql`
+      SELECT
+        id,
+        fid,
+        start_date as "startDate",
+        start_time as "startTime",
+        addiction,
+        custom_addiction as "customAddiction",
+        daily_cost as "dailyCost",
+        motivation,
+        pledge_date as "pledgeDate",
+        wallet_address as "walletAddress",
+        auth_strategy as "authStrategy",
+        is_active as "isActive",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM user_sobriety_addictions
+      WHERE fid = ${fid} AND is_active = TRUE
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `;
+
+    if (newResult.rows.length > 0) {
+      return newResult.rows[0] as UserSobrietyData;
+    }
+
+    // Fallback to old table for backwards compatibility
     const result = await sql`
       SELECT
         fid,
@@ -192,24 +247,67 @@ export async function getUserSobrietyData(
 }
 
 /**
+ * Retrieves all user sobriety addictions by Farcaster ID
+ * 
+ * Fetches all addiction tracking records for a specific user.
+ * 
+ * @param fid - Farcaster ID of the user
+ * @returns Promise resolving to array of user addiction data
+ */
+export async function getAllUserSobrietyData(
+  fid: number
+): Promise<UserSobrietyData[]> {
+  try {
+    const result = await sql`
+      SELECT
+        id,
+        fid,
+        start_date as "startDate",
+        start_time as "startTime",
+        addiction,
+        custom_addiction as "customAddiction",
+        daily_cost as "dailyCost",
+        motivation,
+        pledge_date as "pledgeDate",
+        wallet_address as "walletAddress",
+        auth_strategy as "authStrategy",
+        is_active as "isActive",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM user_sobriety_addictions
+      WHERE fid = ${fid}
+      ORDER BY is_active DESC, updated_at DESC
+    `;
+
+    return result.rows as UserSobrietyData[];
+  } catch (error) {
+    console.error("Failed to get all user sobriety data:", error);
+    return [];
+  }
+}
+
+/**
  * Saves or updates user sobriety data
  * 
- * Inserts new user data or updates existing data if the FID already exists.
- * Uses ON CONFLICT to perform upsert operation. Preserves existing wallet
- * address and auth strategy if not provided in update.
+ * Inserts new user data or updates existing data if the ID already exists.
+ * Uses ON CONFLICT to perform upsert operation. For new multi-addiction table.
  * 
  * @param data - User sobriety data to save
  * @returns Promise with success status and optional error
  */
 export async function saveUserSobrietyData(
   data: UserSobrietyData
-): Promise<{ success: boolean; error?: unknown }> {
+): Promise<{ success: boolean; error?: unknown; id?: string }> {
   try {
+    // Generate ID if not provided (fid-addiction-timestamp format)
+    const id = data.id || `${data.fid}-${data.addiction.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+    
     await sql`
-      INSERT INTO user_sobriety (
-        fid, start_date, start_time, addiction, custom_addiction,
-        daily_cost, motivation, pledge_date, wallet_address, auth_strategy, updated_at
+      INSERT INTO user_sobriety_addictions (
+        id, fid, start_date, start_time, addiction, custom_addiction,
+        daily_cost, motivation, pledge_date, wallet_address, auth_strategy, is_active, updated_at
       ) VALUES (
+        ${id},
         ${data.fid},
         ${data.startDate},
         ${data.startTime || null},
@@ -220,9 +318,10 @@ export async function saveUserSobrietyData(
         ${data.pledgeDate || null},
         ${data.walletAddress || null},
         ${data.authStrategy || null},
+        ${data.isActive !== undefined ? data.isActive : true},
         CURRENT_TIMESTAMP
       )
-      ON CONFLICT (fid)
+      ON CONFLICT (id)
       DO UPDATE SET
         start_date = ${data.startDate},
         start_time = ${data.startTime || null},
@@ -233,16 +332,124 @@ export async function saveUserSobrietyData(
         pledge_date = ${data.pledgeDate || null},
         wallet_address = COALESCE(${
           data.walletAddress || null
-        }, user_sobriety.wallet_address),
+        }, user_sobriety_addictions.wallet_address),
         auth_strategy = COALESCE(${
           data.authStrategy || null
-        }, user_sobriety.auth_strategy),
+        }, user_sobriety_addictions.auth_strategy),
+        is_active = ${data.isActive !== undefined ? data.isActive : true},
         updated_at = CURRENT_TIMESTAMP
     `;
 
-    return { success: true };
+    // Also save to old table for backwards compatibility (only the active one)
+    if (data.isActive !== false) {
+      await sql`
+        INSERT INTO user_sobriety (
+          fid, start_date, start_time, addiction, custom_addiction,
+          daily_cost, motivation, pledge_date, wallet_address, auth_strategy, updated_at
+        ) VALUES (
+          ${data.fid},
+          ${data.startDate},
+          ${data.startTime || null},
+          ${data.addiction},
+          ${data.customAddiction || null},
+          ${data.dailyCost || 8},
+          ${data.motivation || null},
+          ${data.pledgeDate || null},
+          ${data.walletAddress || null},
+          ${data.authStrategy || null},
+          CURRENT_TIMESTAMP
+        )
+        ON CONFLICT (fid)
+        DO UPDATE SET
+          start_date = ${data.startDate},
+          start_time = ${data.startTime || null},
+          addiction = ${data.addiction},
+          custom_addiction = ${data.customAddiction || null},
+          daily_cost = ${data.dailyCost || 8},
+          motivation = ${data.motivation || null},
+          pledge_date = ${data.pledgeDate || null},
+          wallet_address = COALESCE(${
+            data.walletAddress || null
+          }, user_sobriety.wallet_address),
+          auth_strategy = COALESCE(${
+            data.authStrategy || null
+          }, user_sobriety.auth_strategy),
+          updated_at = CURRENT_TIMESTAMP
+      `;
+    }
+
+    return { success: true, id };
   } catch (error) {
     console.error("Failed to save user sobriety data:", error);
+    return { success: false, error };
+  }
+}
+
+/**
+ * Sets the active addiction for a user
+ * 
+ * Marks one addiction as active and all others as inactive.
+ * 
+ * @param fid - Farcaster ID of the user
+ * @param addictionId - ID of the addiction to set as active
+ * @returns Promise with success status and optional error
+ */
+export async function setActiveAddiction(
+  fid: number,
+  addictionId: string
+): Promise<{ success: boolean; error?: unknown }> {
+  try {
+    // Set all addictions for this user to inactive
+    await sql`
+      UPDATE user_sobriety_addictions
+      SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP
+      WHERE fid = ${fid}
+    `;
+    
+    // Set the selected addiction to active
+    await sql`
+      UPDATE user_sobriety_addictions
+      SET is_active = TRUE, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${addictionId} AND fid = ${fid}
+    `;
+    
+    // Update the old table for backwards compatibility
+    const activeData = await sql`
+      SELECT
+        fid,
+        start_date as "startDate",
+        start_time as "startTime",
+        addiction,
+        custom_addiction as "customAddiction",
+        daily_cost as "dailyCost",
+        motivation,
+        pledge_date as "pledgeDate",
+        wallet_address as "walletAddress",
+        auth_strategy as "authStrategy"
+      FROM user_sobriety_addictions
+      WHERE id = ${addictionId} AND fid = ${fid}
+    `;
+    
+    if (activeData.rows.length > 0) {
+      const data = activeData.rows[0];
+      await sql`
+        UPDATE user_sobriety
+        SET
+          start_date = ${data.startDate},
+          start_time = ${data.startTime || null},
+          addiction = ${data.addiction},
+          custom_addiction = ${data.customAddiction || null},
+          daily_cost = ${data.dailyCost || 8},
+          motivation = ${data.motivation || null},
+          pledge_date = ${data.pledgeDate || null},
+          updated_at = CURRENT_TIMESTAMP
+        WHERE fid = ${fid}
+      `;
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to set active addiction:", error);
     return { success: false, error };
   }
 }
@@ -260,10 +467,57 @@ export async function deleteUserSobrietyData(
   fid: number
 ): Promise<{ success: boolean; error?: unknown }> {
   try {
+    await sql`DELETE FROM user_sobriety_addictions WHERE fid = ${fid}`;
     await sql`DELETE FROM user_sobriety WHERE fid = ${fid}`;
     return { success: true };
   } catch (error) {
     console.error("Failed to delete user sobriety data:", error);
+    return { success: false, error };
+  }
+}
+
+/**
+ * Deletes a specific addiction record
+ * 
+ * Removes a single addiction tracking record for a user.
+ * If the deleted addiction was active, sets another addiction as active if available.
+ * 
+ * @param fid - Farcaster ID of the user
+ * @param addictionId - ID of the addiction to delete
+ * @returns Promise with success status and optional error
+ */
+export async function deleteAddiction(
+  fid: number,
+  addictionId: string
+): Promise<{ success: boolean; error?: unknown }> {
+  try {
+    // Check if the addiction being deleted is active
+    const addiction = await sql`
+      SELECT is_active FROM user_sobriety_addictions WHERE id = ${addictionId} AND fid = ${fid}
+    `;
+    
+    const wasActive = addiction.rows.length > 0 && addiction.rows[0].is_active;
+    
+    // Delete the addiction
+    await sql`DELETE FROM user_sobriety_addictions WHERE id = ${addictionId} AND fid = ${fid}`;
+    
+    // If it was active, set another addiction as active
+    if (wasActive) {
+      const remaining = await sql`
+        SELECT id FROM user_sobriety_addictions WHERE fid = ${fid} ORDER BY updated_at DESC LIMIT 1
+      `;
+      
+      if (remaining.rows.length > 0) {
+        await setActiveAddiction(fid, remaining.rows[0].id);
+      } else {
+        // No more addictions, delete from old table too
+        await sql`DELETE FROM user_sobriety WHERE fid = ${fid}`;
+      }
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete addiction:", error);
     return { success: false, error };
   }
 }

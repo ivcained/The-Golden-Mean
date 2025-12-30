@@ -17,6 +17,13 @@
 
 import React from "react";
 
+interface AddictionData {
+  id?: string;
+  addiction: string;
+  startDate: string;
+  isActive?: boolean;
+}
+
 interface TimerViewProps {
   addiction: string;
   startDate: string;
@@ -36,6 +43,10 @@ interface TimerViewProps {
   handleCostUpdate: () => void;
   handleReset: () => void;
   onOpenCommunity: () => void;
+  allAddictions: AddictionData[];
+  currentAddictionId?: string;
+  onSwitchAddiction: (id: string) => void;
+  onAddNewAddiction: () => void;
 }
 
 export default function TimerView({
@@ -52,7 +63,13 @@ export default function TimerView({
   handleCostUpdate,
   handleReset,
   onOpenCommunity,
+  allAddictions,
+  currentAddictionId,
+  onSwitchAddiction,
+  onAddNewAddiction,
 }: TimerViewProps) {
+  const [showAddictionMenu, setShowAddictionMenu] = React.useState(false);
+  
   const totalDays = timerDisplay.days + timerDisplay.hours / 24;
   const currentSavings = totalDays * dailyCost;
   const projectedMonthlySavings = dailyCost * 30.44;
@@ -92,15 +109,50 @@ export default function TimerView({
     <div className="min-h-screen bg-gradient-to-b from-slate-800 to-slate-900">
       <div className="w-full max-w-lg mx-auto py-8 px-4">
         <div className="flex items-center justify-between mb-6">
-          <button
-            onClick={handleReset}
-            className="p-2 text-slate-400 hover:text-white"
-          >
-            <span className="text-xl">‹</span>
-          </button>
-          <div className="flex items-center gap-2">
+          <div className="w-8" /> {/* Empty spacer for alignment */}
+          <div className="flex items-center gap-2 relative">
             <span className="text-lg text-slate-400">»</span>
-            <span className="font-semibold text-white">{addiction}</span>
+            <button
+              onClick={() => setShowAddictionMenu(!showAddictionMenu)}
+              className="font-semibold text-white hover:text-cyan-400 flex items-center gap-1"
+            >
+              {addiction}
+              {allAddictions.length > 1 && (
+                <span className="text-sm">▼</span>
+              )}
+            </button>
+            
+            {/* Addiction dropdown menu */}
+            {showAddictionMenu && allAddictions.length > 0 && (
+              <div className="absolute top-full mt-2 right-0 bg-slate-800 rounded-xl shadow-lg border border-slate-700 py-2 z-10 min-w-[200px]">
+                {allAddictions.map((add) => (
+                  <button
+                    key={add.id}
+                    onClick={() => {
+                      if (add.id) onSwitchAddiction(add.id);
+                      setShowAddictionMenu(false);
+                    }}
+                    className={`w-full px-4 py-2 text-left hover:bg-slate-700 flex items-center justify-between ${
+                      add.id === currentAddictionId ? "text-cyan-400" : "text-white"
+                    }`}
+                  >
+                    <span>{add.addiction}</span>
+                    {add.id === currentAddictionId && <span>✓</span>}
+                  </button>
+                ))}
+                <div className="border-t border-slate-700 mt-2 pt-2">
+                  <button
+                    onClick={() => {
+                      onAddNewAddiction();
+                      setShowAddictionMenu(false);
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-slate-700 text-cyan-400"
+                  >
+                    + Add Another Addiction
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="w-8" />
         </div>
