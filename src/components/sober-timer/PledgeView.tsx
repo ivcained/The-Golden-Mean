@@ -34,6 +34,45 @@ interface PledgeViewProps {
   onClose: () => void;
 }
 
+const pledgeOptions = [
+  {
+    id: "stay-sober",
+    text: "Today, I will stay sober",
+    emoji: "🌟",
+    color: "from-cyan-500 to-blue-500",
+  },
+  {
+    id: "quit",
+    text: "Today, I will quit",
+    emoji: "🚀",
+    color: "from-purple-500 to-pink-500",
+  },
+  {
+    id: "change",
+    text: "Today, I will change",
+    emoji: "✨",
+    color: "from-green-500 to-teal-500",
+  },
+  {
+    id: "recover",
+    text: "Today, I will recover",
+    emoji: "💪",
+    color: "from-orange-500 to-red-500",
+  },
+  {
+    id: "transform",
+    text: "Today, I will transform",
+    emoji: "🦋",
+    color: "from-indigo-500 to-purple-500",
+  },
+  {
+    id: "begin",
+    text: "Today, I begin again",
+    emoji: "🌅",
+    color: "from-amber-500 to-orange-500",
+  },
+];
+
 const motivationOptions = [
   {
     id: "kids",
@@ -114,7 +153,7 @@ export default function PledgeView({
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [authStrategy, setAuthStrategy] = useState<string | null>(null);
   const [selectedMotivations, setSelectedMotivations] = useState<string[]>([]);
-  const [pledgeAccepted, setPledgeAccepted] = useState(false);
+  const [selectedPledge, setSelectedPledge] = useState<string | null>(null);
 
   // Extract Farcaster user from frame context
   const isInMiniApp = frameContext?.isInMiniApp ?? false;
@@ -143,12 +182,16 @@ export default function PledgeView({
   };
 
   const handleConfirmPledge = () => {
-    if (selectedMotivations.length > 0) {
+    if (selectedMotivations.length > 0 && selectedPledge) {
+      const pledge = pledgeOptions.find((p) => p.id === selectedPledge);
+      if (!pledge) return; // Safety check - should never happen since button is disabled
+      
       const motivationTexts = selectedMotivations
         .map((id) => motivationOptions.find((m) => m.id === id)?.text)
         .filter(Boolean)
         .join(", ");
-      onPledgeConfirmed(motivationTexts, walletAddress || undefined);
+      const fullMotivation = `${pledge.text}. ${motivationTexts}`;
+      onPledgeConfirmed(fullMotivation, walletAddress || undefined);
     }
   };
 
@@ -254,36 +297,40 @@ export default function PledgeView({
         )}
 
         <div className="px-4 py-6">
-          {/* Pledge Card */}
-          <button
-            onClick={() => setPledgeAccepted(!pledgeAccepted)}
-            className={`w-full p-6 rounded-2xl mb-4 flex items-center justify-between transition-all ${
-              pledgeAccepted
-                ? "bg-gradient-to-r from-cyan-500 to-blue-500 shadow-lg"
-                : "bg-slate-700"
-            }`}
-          >
-            <span className="text-xl font-semibold text-white">
-              Today, I will stay sober
-            </span>
-            <div
-              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
-                pledgeAccepted ? "border-white bg-white/20" : "border-slate-500"
-              }`}
-            >
-              {pledgeAccepted && <span className="text-white">✓</span>}
-            </div>
-          </button>
-
-          {/* Pagination dots */}
-          <div className="flex justify-center gap-2 mb-6">
-            <div className="w-2 h-2 rounded-full bg-slate-300" />
-            <div className="w-2 h-2 rounded-full bg-cyan-500" />
-            <div className="w-2 h-2 rounded-full bg-slate-300" />
+          {/* Pledge Options Grid */}
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">
+            Make Your Pledge
+          </h2>
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {pledgeOptions.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => setSelectedPledge(option.id)}
+                className={`relative p-4 rounded-2xl transition-all ${
+                  selectedPledge === option.id
+                    ? `bg-gradient-to-r ${option.color} shadow-lg ring-4 ring-offset-2 ring-slate-200`
+                    : "bg-slate-100 hover:bg-slate-200"
+                }`}
+              >
+                <div className="text-3xl mb-2">{option.emoji}</div>
+                <p
+                  className={`text-sm font-medium ${
+                    selectedPledge === option.id ? "text-white" : "text-slate-700"
+                  }`}
+                >
+                  {option.text}
+                </p>
+                {selectedPledge === option.id && (
+                  <div className="absolute top-2 right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                    <span className="text-cyan-500 text-sm font-bold">✓</span>
+                  </div>
+                )}
+              </button>
+            ))}
           </div>
 
           {/* Why I'm doing this */}
-          <h2 className="text-xl font-semibold text-slate-800 text-center mb-6">
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">
             Why I&apos;m doing this
           </h2>
 
@@ -339,7 +386,7 @@ export default function PledgeView({
           <div className="max-w-lg mx-auto">
             <button
               onClick={handleConfirmPledge}
-              disabled={!pledgeAccepted || selectedMotivations.length === 0}
+              disabled={!selectedPledge || selectedMotivations.length === 0}
               className="w-full py-4 px-6 bg-gradient-to-r from-cyan-400 to-blue-400 hover:from-cyan-500 hover:to-blue-500 disabled:from-slate-300 disabled:to-slate-400 text-white rounded-full font-semibold text-lg transition-all shadow-lg disabled:shadow-none flex items-center justify-center gap-2"
             >
               Confirm Pledge
