@@ -19,8 +19,15 @@ import React from "react";
 
 interface AddictionData {
   id?: string;
-  addiction: string;
   startDate: string;
+  startTime: string;
+  addiction: string;
+  customAddiction: string;
+  dailyCost: number;
+  motivation?: string;
+  pledgeDate?: string;
+  walletAddress?: string;
+  authStrategy?: string;
   isActive?: boolean;
 }
 
