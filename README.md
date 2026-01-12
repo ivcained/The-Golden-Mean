@@ -518,7 +518,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/ivcained/The-Golden-Mean/issues)
-- **Farcaster**: [@ivcained](https://warpcast.com/ivcained)
+- **Farcaster**: [@ivcained](https://farcaster.com/ivc)
 - **Documentation**: [Farcaster MiniKit Docs](https://docs.base.org/base-app/build-with-minikit/overview)
 
 ---
